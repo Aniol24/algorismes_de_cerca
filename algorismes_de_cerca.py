@@ -1,6 +1,8 @@
 import json
 import math
 from heapq import heappush, heappop
+import networkx as nx
+import matplotlib.pyplot as plt
 
 with open('2324_GI004_CA5_Cerca_dades_rutes_1.json', 'r') as file:
     data = json.load(file)
@@ -102,12 +104,39 @@ def calculate_total_distance_and_duration(route):
                 total_duration += neighbor[2]
     print(f"Distancia total: {total_distance}, Duración total: {total_duration}")
 
+
+def visualize_graph_with_path(path, src, dest, alg, save_path):
+    G = nx.DiGraph()
+
+    for city, coord in cities.items():
+        G.add_node(city, pos=coord)
+    for city, neighbors in graph.items():
+        for neighbor in neighbors:
+            G.add_edge(city, neighbor[0], weight=neighbor[1])
+
+    pos = nx.spring_layout(G, seed=42)  # Disposición del grafo
+    plt.figure(figsize=(12, 8))
+
+    nx.draw_networkx_nodes(G, pos, node_size=500, node_color='lightblue')
+    nx.draw_networkx_edges(G, pos, width=1.0, alpha=0.5)
+
+    path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
+    nx.draw_networkx_edges(G, pos, edgelist=path_edges, width=2.5, edge_color='r')
+
+    nx.draw_networkx_labels(G, pos, font_size=10)
+
+    plt.title(f"Algoritmo {alg} entre {src} y {dest}")
+    plt.savefig(save_path)
+    plt.close()
+
 # A*
 
 origin = "Sort"
 destination = "L'Hospitalet de Llobregat"
 shortest_path = a_star(graph, origin, destination)
 print("Shortest path from", origin, "to", destination, ":", shortest_path)
+save_path = f"visualizacion/A_{origin}_{destination}"
+visualize_graph_with_path(shortest_path, origin, destination, "A*", save_path)
 
 # CSP
 
@@ -118,5 +147,7 @@ solution = csp(start_city, end_city)
 if solution:
     print(f"Ruta encontrada de {start_city} a {end_city}: {solution}")
     calculate_total_distance_and_duration(solution)
+    save_path = f"visualizacion/csp_{start_city}_{end_city}"
+    visualize_graph_with_path(solution, start_city, end_city, "CSP", save_path)
 else:
     print(f"No se encontró ninguna ruta de {start_city} a {end_city} que cumpla con las restricciones.")
